@@ -46,7 +46,7 @@ int TCPServer::startServer() {
         return 1;
     }
 
-    std::cout << "Successfully initialized server ... \n" << std::endl;
+    std::cout << "## Successfully initialized server ##" << std::endl;
 
     startListen();
 
@@ -104,7 +104,7 @@ int TCPServer::readConnection() {
     unsigned short count = 4096;
 
     // Buffer to store bytes from new_sockfd
-    char buf[count] = {0};
+    char buf[count];
 
     // Reads and returns the number of bytes from new_sockfd
     ssize_t readBytes = read(new_sockfd, buf, count);
