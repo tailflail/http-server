@@ -4,7 +4,12 @@ services:
   app:
     build:
       context: .
+    environment:
+      SERVER_IP_ADDRESS: ${SERVER_IP_ADDRESS}
+      SERVER_PORT: ${SERVER_PORT}
     ports:
-        - 8080:8080
+        - ${SERVER_PORT}:${SERVER_PORT}
     volumes:
         - .:/http-server
+    env_file:
+      - .env
