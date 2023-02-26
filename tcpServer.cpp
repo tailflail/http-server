@@ -32,21 +32,21 @@ int TCPServer::startServer() {
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
     if (sockfd == -1) {
-        std::cerr << "ERROR: Could not create socket (" << errno << ")" << std::endl;
-        exit(EXIT_FAILURE);
+        log(FATAL, "Could not create socket");
         return 1;
     }
 
-    // Binds sockfd to the host IP address.
+    // Binds sockfd to the host socket address.
     const int bindSockfd = bind(sockfd, (struct sockaddr *)&addr, addrlen);
 
     if (bindSockfd == -1) {
-        std::cerr << "ERROR: Could not bind socket to IP " << ip_address <<  " (" << errno << ")" << std::endl;
-        exit(EXIT_FAILURE);
+        std::stringstream logMsg;
+        logMsg << "Could not bind socket to socket address " << ip_address << ":" << port;
+        log(FATAL, logMsg.str());
         return 1;
     }
 
-    std::cout << "## Successfully initialized server ##" << std::endl;
+    log(INFO, "Successfully initialized server");
 
     startListen();
 
@@ -61,12 +61,13 @@ int TCPServer::startListen() {
     const int listenSockfd = listen(sockfd, backlog);
 
     if (listenSockfd == -1) {
-        std::cerr << "ERROR: Could not listen on host socket (" << errno << ")" << std::endl;
-        exit(EXIT_FAILURE);
+        log(FATAL, "Could not listen on host socket");
         return 1;
     }
 
-    std::cout << "Listening on " << ip_address << ":" << port << " ..." << "\n" << std::endl;
+    std::stringstream logMsg;
+    logMsg << "Listening on " << ip_address << ":" << port << " ..." << "\n";
+    log(INFO, logMsg.str());
     
     while (true) {
         acceptConnection();
@@ -86,15 +87,16 @@ int TCPServer::acceptConnection() {
     new_sockfd = accept(sockfd, (struct sockaddr *)&new_addr, &new_addrlen);
 
     if (new_sockfd == -1) {
-        std::cerr << "ERROR: Could not accept peer (" << errno << ")" << std::endl;
-        exit(EXIT_FAILURE);
+        log(FATAL, "Could not accept peer");
         return 1;
     }
 
     const std::string peer_ip_address = inet_ntoa(new_addr.sin_addr);
     const unsigned short peer_port = ntohs(new_addr.sin_port);
 
-    std::cout << "Peer connected from " << peer_ip_address << ":" << peer_port << std::endl;
+    std::stringstream logMsg;
+    logMsg << "Peer connected from " << peer_ip_address << ":" << peer_port;
+    log(INFO, logMsg.str());
 
     return 0;
 }
@@ -110,12 +112,13 @@ int TCPServer::readConnection() {
     ssize_t readBytes = read(new_sockfd, buf, count);
 
     if (readBytes == -1) {
-        std::cerr << "ERROR: Could not read bytes from peer (" << errno << ")" << std::endl;
-        exit(EXIT_FAILURE);
+        log(FATAL, "Could not read bytes from peer");
         return 1;
     }
 
-    std::cout << "Received bytes: " << readBytes << std::endl;
+    std::stringstream logMsg;
+    logMsg << "Received bytes: " << readBytes;
+    log(INFO, logMsg.str());
 
     return 0;
 }
@@ -131,12 +134,34 @@ int TCPServer::writeConnection() {
     ssize_t writeBytes = write(new_sockfd, buf.c_str(), count);
 
     if (writeBytes == -1) {
-        std::cerr << "ERROR: Could not write bytes to peer (" << errno << ")" << std::endl;
-        exit(EXIT_FAILURE);
+        log(FATAL, "Could not write bytes to peer");
         return 1;
     }
 
-    std::cout << "Wrote bytes: " << writeBytes << "\n" << std::endl;
+    std::stringstream logMsg;
+    logMsg << "Wrote bytes: " << writeBytes << '\n';
+    log(INFO, logMsg.str());
 
     return 0;
+}
+
+void TCPServer::log(const LogLevel level, const std::string &msg) {
+    std::string levelStr;
+
+    switch (level) {
+        case INFO:
+            levelStr = "INFO: ";
+            break;
+
+        case FATAL:
+            levelStr = "FATAL ERROR: ";
+            break;    
+    }
+
+    std::cout << levelStr << msg << std::endl;
+
+    if (level == FATAL) {
+        std::cout << "errno: " << errno << std::endl;
+        exit(EXIT_FAILURE);
+    }
 }
